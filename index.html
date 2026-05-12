@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>今天玩这个</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #1a1a24; /* 深蓝灰底色 */
+            color: #e0e0e0;
+        }
+
+        /* 游戏UI风格边框 */
+        .ff-border {
+            border: 1px solid #c0a062; /* 经典金边 */
+            box-shadow: 0 0 5px rgba(192, 160, 98, 0.3);
+        }
+
+        .input-ff {
+            background-color: #2a2a35;
+            border: 1px solid #4a4a55;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        .input-ff:focus {
+            outline: none;
+            border-color: #c0a062;
+            box-shadow: 0 0 8px rgba(192, 160, 98, 0.4);
+        }
+
+        .btn-ff {
+            background: linear-gradient(to bottom, #505060, #303040);
+            border: 1px solid #c0a062;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+            transition: all 0.2s active;
+        }
+
+        .btn-ff:active {
+            transform: translateY(2px);
+            background: linear-gradient(to bottom, #404050, #202030);
+        }
+
+        .btn-roll {
+            background: linear-gradient(to bottom, #b48e4b, #8b6b32);
+            border: 2px solid #e8cc81;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+
+        .btn-roll:active {
+            background: linear-gradient(to bottom, #9a7638, #705423);
+        }
+
+        /* 职能颜色 */
+        .role-tank { border-left: 6px solid #2955d1; } /* 蓝 */
+        .role-healer { border-left: 6px solid #427c36; } /* 绿 */
+        .role-dps { border-left: 6px solid #942935; } /* 红 */
+
+        .role-bg-tank { background-color: rgba(41, 85, 209, 0.15); }
+        .role-bg-healer { background-color: rgba(66, 124, 54, 0.15); }
+        .role-bg-dps { background-color: rgba(148, 41, 53, 0.15); }
+
+        /* 提示框 */
+        #toast {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* 隐藏滚动条但保留功能 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a24; }
+        ::-webkit-scrollbar-thumb { background: #4a4a55; border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen p-4 flex flex-col items-center">
+
+    <div class="w-full max-w-md w-full flex flex-col gap-6">
+        
+        <!-- Header -->
+        <div class="text-center mt-4">
+            <h1 class="text-2xl font-bold text-[#e8cc81] tracking-wider mb-1">今天玩这个</h1>
+            <p class="text-sm text-gray-400">老大我们真能进本吗库啵！</p>
+        </div>
+
+        <!-- View: Input -->
+        <div id="view-input" class="flex flex-col gap-6">
+            <!-- Input Section -->
+            <div id="input-section" class="bg-[#22222e] p-5 rounded-lg ff-border shadow-lg">
+                <h2 class="text-sm font-semibold mb-3 text-[#c0a062] border-b border-[#4a4a55] pb-2">输入队员名单 (8人)</h2>
+                <div class="grid grid-cols-2 gap-3" id="player-inputs">
+                    <!-- Inputs injected by JS -->
+                </div>
+                
+                <button onclick="rollJobs()" class="btn-ff btn-roll w-full mt-6 py-3 rounded shadow-md tracking-widest flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 12-8.5 8.5a2.12 2.12 0 0 1-3-3L11 9"/><path d="M15 13 9 7l4-4 6 6h3a8 8 0 0 1-7 7z"/></svg>
+                    开 Roll！
+                </button>
+            </div>
+        </div>
+
+        <!-- View: Results -->
+        <div id="view-result" class="hidden flex-col gap-4">
+            
+            <div class="bg-[#1a1a24] p-4 rounded-lg ff-border">
+                <div class="text-center mb-4">
+                    <h2 class="text-lg font-bold text-[#e8cc81]">下个CD队伍配置</h2>
+                </div>
+                
+                <div id="results-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Cards injected by JS -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-3 mt-2 mb-8">
+                <button onclick="copyResults()" class="btn-ff py-2 px-4 rounded flex items-center justify-center gap-2 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    复制结果
+                </button>
+                <button onclick="backToInput()" class="btn-ff py-2 px-4 rounded flex items-center justify-center gap-2 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    重新生成
+                </button>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-10 bg-[#303040] text-white px-6 py-3 rounded shadow-lg ff-border z-50 text-sm">
+        操作成功！
+    </div>
+
+<script>
+    // --- 数据定义 ---
+    const JOB_POOLS = {
+        T: ['战士', '骑士', '绝枪战士', '暗黑骑士'],
+        H: ['白魔法师', '占星术士', '贤者', '学者'],
+        M: ['武士', '武僧', '龙骑士', '钐镰客', '忍者', '蝰蛇剑士'],
+        PR: ['舞者', '机工士', '吟游诗人'],
+        MR: ['召唤师', '黑魔法师', '赤魔法师', '绘灵法师']
+    };
+
+    // 标准队伍结构配置
+    const REQUIRED_ROLES = ['T', 'T', 'H', 'H', 'M', 'M', 'PR', 'MR'];
+
+    // UI 展示配置
+    const ROLE_INFO = {
+        T:  { name: '坦克', icon: '🛡️', borderClass: 'role-tank', bgClass: 'role-bg-tank', textColor: 'text-blue-400' },
+        H:  { name: '治疗', icon: '➕', borderClass: 'role-healer', bgClass: 'role-bg-healer', textColor: 'text-green-400' },
+        M:  { name: '近战', icon: '⚔️', borderClass: 'role-dps', bgClass: 'role-bg-dps', textColor: 'text-red-400' },
+        PR: { name: '远敏', icon: '🏹', borderClass: 'role-dps', bgClass: 'role-bg-dps', textColor: 'text-red-400' },
+        MR: { name: '法系', icon: '🪄', borderClass: 'role-dps', bgClass: 'role-bg-dps', textColor: 'text-red-400' }
+    };
+
+    let currentResults = [];
+
+    // --- 初始化 ---
+    function initInputs() {
+        const container = document.getElementById('player-inputs');
+        for (let i = 1; i <= 8; i++) {
+            container.innerHTML += `
+                <input type="text" id="player-${i}" 
+                    class="input-ff w-full px-3 py-2 rounded text-sm placeholder-gray-500" 
+                    placeholder="玩家 ${i}" value="">
+            `;
+        }
+    }
+    initInputs();
+
+    // --- 核心逻辑：随机分配 ---
+    function rollJobs() {
+        // 1. 获取玩家名字
+        const players = [];
+        for (let i = 1; i <= 8; i++) {
+            let val = document.getElementById(`player-${i}`).value.trim();
+            players.push(val || `玩家 ${i}`); // 默认名字
+        }
+
+        // 2. 准备职能池 (打乱玩家对应的职能)
+        let assignedRoles = shuffleArray([...REQUIRED_ROLES]);
+
+        // 3. 深拷贝职业池，防止同位置重复
+        let availableJobs = JSON.parse(JSON.stringify(JOB_POOLS));
+        currentResults = [];
+
+        // 4. 开始分配
+        for (let i = 0; i < 8; i++) {
+            let role = assignedRoles[i];
+            let pool = availableJobs[role];
+            
+            // 随机抽取一个职业并从池中移除
+            let randomIndex = Math.floor(Math.random() * pool.length);
+            let selectedJob = pool.splice(randomIndex, 1)[0];
+
+            currentResults.push({
+                name: players[i],
+                roleKey: role,
+                job: selectedJob
+            });
+        }
+
+        // 5. 排序显示 (T -> H -> Dps) 以保持队伍面板美观
+        const roleOrder = { 'T': 1, 'H': 2, 'M': 3, 'PR': 4, 'MR': 5 };
+        currentResults.sort((a, b) => roleOrder[a.roleKey] - roleOrder[b.roleKey]);
+
+        renderResults();
+
+        // 切换到结果视图
+        document.getElementById('view-input').classList.add('hidden');
+        document.getElementById('view-result').classList.remove('hidden');
+        document.getElementById('view-result').classList.add('flex');
+    }
+
+    // --- 返回主页重新生成 ---
+    function backToInput() {
+        document.getElementById('view-result').classList.add('hidden');
+        document.getElementById('view-result').classList.remove('flex');
+        document.getElementById('view-input').classList.remove('hidden');
+    }
+
+    // --- 工具函数：数组洗牌 (Fisher-Yates) ---
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // --- 渲染结果 ---
+    function renderResults() {
+        const grid = document.getElementById('results-grid');
+        grid.innerHTML = '';
+
+        currentResults.forEach(result => {
+            const info = ROLE_INFO[result.roleKey];
+            
+            const cardHTML = `
+                <div class="bg-[#2a2a35] rounded ${info.borderClass} ${info.bgClass} p-3 flex items-center justify-between shadow">
+                    <div class="flex flex-col truncate w-1/2">
+                        <span class="text-xs text-gray-400 mb-0.5">${info.icon} ${info.name}</span>
+                        <span class="font-bold text-sm truncate" title="${result.name}">${result.name}</span>
+                    </div>
+                    <div class="text-right flex-shrink-0 flex items-center gap-2">
+                        <img src="${result.job}.png" alt="${result.job}" class="w-6 h-6 object-contain" onerror="this.style.display='none'">
+                        <span class="${info.textColor} font-bold tracking-wide">${result.job}</span>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += cardHTML;
+        });
+    }
+
+    // --- 复制功能 ---
+    function copyResults() {
+        if (currentResults.length === 0) return;
+        
+        let text = "【下个CD队伍配置】\n";
+        currentResults.forEach(r => {
+            const info = ROLE_INFO[r.roleKey];
+            text += `${info.icon} ${info.name} | ${r.job} | ${r.name}\n`;
+        });
+
+        // 尝试使用现代 Clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => showToast('复制成功！')).catch(fallbackCopy);
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
+        // 降级复制方案，兼容非 HTTPS/iframe
+        const textArea = document.createElement("textarea");
+        textArea.value = typeof text === 'string' ? text : "【下个CD队伍配置】\n" + currentResults.map(r => `${ROLE_INFO[r.roleKey].icon} ${r.job} - ${r.name}`).join('\n');
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showToast('复制成功！');
+        } catch (err) {
+            showToast('复制失败，请手动截图。');
+        }
+        textArea.remove();
+    }
+
+    // --- 提示框 ---
+    let toastTimeout;
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.innerText = message;
+        toast.classList.add('show');
+        
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+    }
+</script>
+</body>
+</html>
