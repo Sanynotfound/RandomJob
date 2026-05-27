@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>今天玩这个</title>
+    <title>今天玩这个！</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap');
         
         body {
             font-family: 'Noto Sans SC', sans-serif;
-            background-color: #1a1a24; /* 深蓝灰底色 */
+            background-color: #1a1a24;
             color: #e0e0e0;
         }
 
-        /* 游戏UI风格边框 */
         .ff-border {
-            border: 1px solid #c0a062; /* 经典金边 */
+            border: 1px solid #c0a062;
             box-shadow: 0 0 5px rgba(192, 160, 98, 0.3);
         }
 
@@ -33,7 +32,6 @@
             box-shadow: 0 0 8px rgba(192, 160, 98, 0.4);
         }
 
-        /* 下拉选项在某些浏览器中需要特定背景色防看不清 */
         .input-ff option {
             background-color: #2a2a35;
             color: #fff;
@@ -83,7 +81,6 @@
             opacity: 1;
         }
         
-        /* 隐藏滚动条但保留功能 */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1a1a24; }
         ::-webkit-scrollbar-thumb { background: #4a4a55; border-radius: 3px; }
@@ -95,7 +92,7 @@
         
         <!-- Header -->
         <div class="text-center mt-4">
-            <h1 class="text-2xl font-bold text-[#e8cc81] tracking-wider mb-1">今天玩这个</h1>
+            <h1 class="text-3xl font-bold text-[#e8cc81] tracking-widest mb-2" style="font-family: 'Noto Serif SC', serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(192, 160, 98, 0.3);">今天玩这个</h1>
             <p class="text-sm text-gray-400">老大我们这样真的能过本吗库啵？！</p>
         </div>
 
@@ -157,7 +154,6 @@
     </div>
 
 <script>
-    // --- 数据定义 ---
     const JOB_POOLS = {
         T: ['战士', '骑士', '绝枪战士', '暗黑骑士'],
         H: ['白魔法师', '占星术士', '贤者', '学者'],
@@ -173,7 +169,6 @@
         'CHAOS': { roles: ['FREE_ALL', 'FREE_ALL', 'FREE_ALL', 'FREE_ALL', 'FREE_ALL', 'FREE_ALL', 'FREE_ALL', 'FREE_ALL'], size: 8 }
     };
 
-    // UI 展示配置
     const ROLE_INFO = {
         T:  { name: '坦克', borderClass: 'role-tank', bgClass: 'role-bg-tank', textColor: 'text-blue-400' },
         H:  { name: '治疗', borderClass: 'role-healer', bgClass: 'role-bg-healer', textColor: 'text-green-400' },
@@ -185,7 +180,6 @@
     let currentResults = [];
     let savedPlayerNames = Array(8).fill('');
 
-    // --- 模式切换 ---
     function changeMode() {
         const inputs = document.querySelectorAll('[id^="player-"]');
         inputs.forEach((input, index) => {
@@ -194,7 +188,6 @@
         initInputs();
     }
 
-    // --- 初始化 ---
     function initInputs() {
         const currentMode = document.getElementById('mode-select') ? document.getElementById('mode-select').value : 'FULL';
         const size = MODES[currentMode].size;
@@ -211,7 +204,6 @@
     }
     initInputs();
 
-    // --- 核心逻辑：随机分配 ---
     function rollJobs() {
         const currentModeKey = document.getElementById('mode-select').value;
         const mode = MODES[currentModeKey];
@@ -243,7 +235,6 @@
 
         let playerRoleAssignments = players.map((name, i) => ({ name, roleReq: assignedRoles[i] }));
         
-        // 分配特定职能
         playerRoleAssignments.forEach(pra => {
             if (['T', 'H', 'M', 'PR', 'MR'].includes(pra.roleReq)) {
                 let picked = pickJob([pra.roleReq]);
@@ -252,7 +243,6 @@
             }
         });
 
-        // 分配 DPS 自由人
         playerRoleAssignments.forEach(pra => {
             if (pra.roleReq === 'FREE_DPS') {
                 let picked = pickJob(['M', 'PR', 'MR']);
@@ -261,7 +251,6 @@
             }
         });
 
-        // 分配全职业自由人
         playerRoleAssignments.forEach(pra => {
             if (pra.roleReq === 'FREE_ALL') {
                 let picked = pickJob(['T', 'H', 'M', 'PR', 'MR']);
@@ -307,7 +296,6 @@
         currentResults.forEach(result => {
             const info = ROLE_INFO[result.roleKey];
             
-            // 恢复至 FF14 经典卡片样式：红蓝绿职能背景条，深灰底色，附带对应职业图片展示
             const cardHTML = `
                 <div class="bg-[#2a2a35] rounded ${info.borderClass} ${info.bgClass} p-3 flex items-center justify-between shadow">
                     <div class="flex flex-col truncate w-[55%]">
@@ -329,8 +317,7 @@
         
         let text = "【分配结果】\n";
         currentResults.forEach(r => {
-            const info = ROLE_INFO[r.roleKey];
-            text += `${info.name} | ${r.job} | ${r.name}\n`;
+            text += `${r.job} - ${r.name}\n`;
         });
 
         if (navigator.clipboard && window.isSecureContext) {
@@ -342,7 +329,7 @@
 
     function fallbackCopy(text) {
         const textArea = document.createElement("textarea");
-        textArea.value = typeof text === 'string' ? text : currentResults.map(r => `${ROLE_INFO[r.roleKey].name} ${r.job} - ${r.name}`).join('\n');
+        textArea.value = typeof text === 'string' ? text : "【分配结果】\n" + currentResults.map(r => `${r.job} - ${r.name}`).join('\n');
         textArea.style.position = "fixed";
         textArea.style.left = "-999999px";
         document.body.appendChild(textArea);
